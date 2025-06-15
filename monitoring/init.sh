@@ -25,10 +25,6 @@ if [ ! -f .env ]; then
     read -s -p "Enter Grafana admin password (will be hidden): " GF_ADMIN_PASSWORD
     echo ""
 
-    # Prompt for Wazuh indexer username
-    read -p "Enter Wazuh indexer username [admin]: " WAZUH_INDEXER_USERNAME
-    WAZUH_INDEXER_USERNAME=${WAZUH_INDEXER_USERNAME:-admin}
-
     # Prompt for Wazuh indexer password
     read -s -p "Enter Wazuh indexer password (will be hidden): " WAZUH_INDEXER_PASSWORD
     echo ""
@@ -48,7 +44,6 @@ OPENSEARCH_ADMIN_PASSWORD='${OPENSEARCH_PASSWORD}'
 GF_ENDPOINT='${GF_ENDPOINT}'
 GF_ADMIN_USER='${GF_ADMIN_USER}'
 GF_ADMIN_PASSWORD='${GF_ADMIN_PASSWORD}'
-WAZUH_INDEXER_USERNAME='${WAZUH_INDEXER_USERNAME}'
 WAZUH_INDEXER_PASSWORD='${WAZUH_INDEXER_PASSWORD}'
 WAZUH_API_USERNAME='${WAZUH_API_USERNAME}'
 WAZUH_API_PASSWORD='${WAZUH_API_PASSWORD}'
@@ -158,9 +153,12 @@ fi
 # Generate Wazuh indexer internal_users.yml with hashed admin password
 echo "Generating Wazuh indexer internal_users.yml..."
 if command -v docker >/dev/null 2>&1; then
-    if [ -n "$WAZUH_INDEXER_PASSWORD" ]; then
-        # Generate bcrypt hash using Wazuh indexer container (fix console allocation issue)
-        HASHED_PASSWORD=$(printf "%s" "$WAZUH_INDEXER_PASSWORD" | docker run --rm -i wazuh/wazuh-indexer:4.12.0 /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh)
+    # Get the password from .env file (remove quotes)
+    INDEXER_PASSWORD=$(grep "WAZUH_INDEXER_PASSWORD=" .env | cut -d"'" -f2)
+
+    if [ -n "$INDEXER_PASSWORD" ]; then
+        # Generate bcrypt hash using Wazuh indexer container (use here-string to avoid console issues)
+        HASHED_PASSWORD=$(docker run --rm wazuh/wazuh-indexer:4.12.0 /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh "$INDEXER_PASSWORD")
 
         if [ -n "$HASHED_PASSWORD" ]; then
             # Create directory if it doesn't exist
@@ -231,7 +229,7 @@ EOF
             echo "⚠ Failed to generate password hash"
         fi
     else
-        echo "⚠ Could not find WAZUH_INDEXER_PASSWORD variable"
+        echo "⚠ Could not find WAZUH_INDEXER_PASSWORD in .env file"
     fi
 else
     echo "⚠ Docker not available - you may need to hash the password manually"

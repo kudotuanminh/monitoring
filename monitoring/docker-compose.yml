@@ -89,7 +89,7 @@ services:
         ports:
             - "5602:5602"
         environment:
-            - INDEXER_USERNAME=${WAZUH_INDEXER_USERNAME}
+            - INDEXER_USERNAME=admin
             - INDEXER_PASSWORD=${WAZUH_INDEXER_PASSWORD}
             - WAZUH_API_URL=https://wazuh-manager
             - DASHBOARD_USERNAME=kibanaserver
@@ -130,7 +130,7 @@ services:
             - "55000:55000"
         environment:
             - INDEXER_URL=https://wazuh.indexer:9201
-            - INDEXER_USERNAME=${WAZUH_INDEXER_USERNAME}
+            - INDEXER_USERNAME=admin
             - INDEXER_PASSWORD=${WAZUH_INDEXER_PASSWORD}
             - FILEBEAT_SSL_VERIFICATION_MODE=full
             - SSL_CERTIFICATE_AUTHORITIES=/etc/ssl/root-ca.pem
