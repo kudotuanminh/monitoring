@@ -12,10 +12,10 @@ services:
             - GF_INSTALL_PLUGINS=grafana-opensearch-datasource
             - OPENSEARCH_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD}
         volumes:
-            - $(pwd)/data/grafana:/var/lib/grafana
-            - $(pwd)/config/grafana/datasources:/etc/grafana/provisioning/datasources
-            - $(pwd)/config/grafana/dashboards:/etc/grafana/provisioning/dashboards
-            - $(pwd)/config/grafana/grafana.ini:/etc/grafana/grafana.ini
+            - ./data/grafana:/var/lib/grafana
+            - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+            - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+            - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini
         networks:
             - monitoring_network
     victoriametrics:
@@ -29,7 +29,7 @@ services:
         ports:
             - "8428:8428"
         volumes:
-            - $(pwd)/data/victoriametrics:/victoriametrics
+            - ./data/victoriametrics:/victoriametrics
         networks:
             - monitoring_network
 
@@ -64,7 +64,7 @@ services:
         ports:
             - "9200:9200"
         volumes:
-            - $(pwd)/data/opensearch:/usr/share/opensearch/data
+            - ./data/opensearch:/usr/share/opensearch/data
         networks:
             - monitoring_network
     logstash:
@@ -75,7 +75,7 @@ services:
         ports:
             - "12345:12345"
         volumes:
-            - $(pwd)/config/logstash/logstash.conf:/logstash_dir/logstash.conf
+            - ./config/logstash/logstash.conf:/logstash_dir/logstash.conf
         command: logstash -f /logstash_dir/logstash.conf
         networks:
             - monitoring_network
@@ -97,13 +97,13 @@ services:
             - API_USERNAME=${WAZUH_API_USERNAME}
             - API_PASSWORD=${WAZUH_API_PASSWORD}
         volumes:
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/wazuh.dashboard.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/wazuh.dashboard-key.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-dashboard/certs/root-ca.pem
-            - $(pwd)/config/wazuh/wazuh_dashboard/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
-            - $(pwd)/config/wazuh/wazuh_dashboard/wazuh.yml:/usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
-            - $(pwd)/data/wazuh/wazuh-dashboard-config/:/usr/share/wazuh-dashboard/data/wazuh/config/
-            - $(pwd)/data/wazuh/wazuh-dashboard-custom/:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom/
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.dashboard.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.dashboard-key.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-dashboard/certs/root-ca.pem
+            - ./config/wazuh/wazuh_dashboard/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
+            - ./config/wazuh/wazuh_dashboard/wazuh.yml:/usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
+            - ./data/wazuh/wazuh-dashboard-config/:/usr/share/wazuh-dashboard/data/wazuh/config/
+            - ./data/wazuh/wazuh-dashboard-custom/:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom/
         depends_on:
             - wazuh.indexer
         links:
@@ -139,21 +139,21 @@ services:
             - API_USERNAME=wazuh-wui
             - API_PASSWORD=${WAZUH_API_PASSWORD}
         volumes:
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/root-ca-manager.pem:/etc/ssl/root-ca.pem
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/wazuh.manager.pem:/etc/ssl/filebeat.pem
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/wazuh.manager-key.pem:/etc/ssl/filebeat.key
-            - $(pwd)/config/wazuh/wazuh_cluster/wazuh_manager.conf:/wazuh-config-mount/etc/ossec.conf
-            - $(pwd)/data/wazuh/wazuh_api_configuration/:/var/ossec/api/configuration/
-            - $(pwd)/data/wazuh/wazuh_etc/:/var/ossec/etc/
-            - $(pwd)/data/wazuh/wazuh_logs/:/var/ossec/logs/
-            - $(pwd)/data/wazuh/wazuh_queue/:/var/ossec/queue/
-            - $(pwd)/data/wazuh/wazuh_var_multigroups/:/var/ossec/var/multigroups/
-            - $(pwd)/data/wazuh/wazuh_integrations/:/var/ossec/integrations/
-            - $(pwd)/data/wazuh/wazuh_active_response/:/var/ossec/active-response/bin/
-            - $(pwd)/data/wazuh/wazuh_agentless/:/var/ossec/agentless/
-            - $(pwd)/data/wazuh/wazuh_wodles/:/var/ossec/wodles/
-            - $(pwd)/data/wazuh/filebeat_etc/:/etc/filebeat/
-            - $(pwd)/data/wazuh/filebeat_var/:/var/lib/filebeat/
+            - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca-manager.pem:/etc/ssl/root-ca.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.manager.pem:/etc/ssl/filebeat.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.manager-key.pem:/etc/ssl/filebeat.key
+            - ./config/wazuh/wazuh_cluster/wazuh_manager.conf:/wazuh-config-mount/etc/ossec.conf
+            - ./data/wazuh/wazuh_api_configuration/:/var/ossec/api/configuration/
+            - ./data/wazuh/wazuh_etc/:/var/ossec/etc/
+            - ./data/wazuh/wazuh_logs/:/var/ossec/logs/
+            - ./data/wazuh/wazuh_queue/:/var/ossec/queue/
+            - ./data/wazuh/wazuh_var_multigroups/:/var/ossec/var/multigroups/
+            - ./data/wazuh/wazuh_integrations/:/var/ossec/integrations/
+            - ./data/wazuh/wazuh_active_response/:/var/ossec/active-response/bin/
+            - ./data/wazuh/wazuh_agentless/:/var/ossec/agentless/
+            - ./data/wazuh/wazuh_wodles/:/var/ossec/wodles/
+            - ./data/wazuh/filebeat_etc/:/etc/filebeat/
+            - ./data/wazuh/filebeat_var/:/var/lib/filebeat/
         networks:
             - monitoring_network
 
@@ -173,14 +173,14 @@ services:
                 soft: 65536
                 hard: 65536
         volumes:
-            - $(pwd)/data/wazuh/wazuh-indexer-data/:/var/lib/wazuh-indexer/
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-indexer/certs/root-ca.pem
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/wazuh.indexer-key.pem:/usr/share/wazuh-indexer/certs/wazuh.indexer.key
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/wazuh.indexer.pem:/usr/share/wazuh-indexer/certs/wazuh.indexer.pem
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/admin.pem:/usr/share/wazuh-indexer/certs/admin.pem
-            - $(pwd)/data/wazuh/wazuh_indexer_ssl_certs/admin-key.pem:/usr/share/wazuh-indexer/certs/admin-key.pem
-            - $(pwd)/config/wazuh/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
-            - $(pwd)/data/wazuh/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+            - ./data/wazuh/wazuh-indexer-data/:/var/lib/wazuh-indexer/
+            - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-indexer/certs/root-ca.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.indexer-key.pem:/usr/share/wazuh-indexer/certs/wazuh.indexer.key
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.indexer.pem:/usr/share/wazuh-indexer/certs/wazuh.indexer.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/admin.pem:/usr/share/wazuh-indexer/certs/admin.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/admin-key.pem:/usr/share/wazuh-indexer/certs/admin-key.pem
+            - ./config/wazuh/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+            - ./data/wazuh/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
         networks:
             - monitoring_network
 
