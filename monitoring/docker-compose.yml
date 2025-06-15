@@ -1,0 +1,91 @@
+services:
+    grafana:
+        container_name: "grafana"
+        image: "grafana/grafana-oss:11.6.2"
+        restart: unless-stopped
+        ports:
+            - "3000:3000"
+        environment:
+            - GF_ENDPOINT=${GF_ENDPOINT}
+            - GF_ADMIN_USER=${GF_ADMIN_USER}
+            - GF_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
+            - GF_INSTALL_PLUGINS=grafana-opensearch-datasource
+            - OPENSEARCH_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD}
+        volumes:
+            - ./data/grafana:/var/lib/grafana
+            - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+            - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini
+        networks:
+            - monitoring_network
+    victoriametrics:
+        container_name: "victoria-metrics"
+        image: "victoriametrics/victoria-metrics:v1.119.0"
+        restart: unless-stopped
+        command:
+            - "--storageDataPath=/victoriametrics"
+            - "--httpListenAddr=:8428"
+            - "--maxLabelsPerTimeseries=100"
+        ports:
+            - "8428:8428"
+        volumes:
+            - ./data/victoriametrics:/victoriametrics
+        networks:
+            - monitoring_network
+
+    opensearch-dashboards:
+        container_name: "opensearch-dashboards"
+        image: "public.ecr.aws/opensearchproject/opensearch-dashboards:2.19.1"
+        ports:
+            - "5601:5601"
+        expose:
+            - "5601"
+        environment:
+            OPENSEARCH_HOSTS: '["https://opensearch:9200"]'
+        networks:
+            - monitoring_network
+        depends_on:
+            - opensearch
+    opensearch:
+        container_name: "opensearch"
+        image: "public.ecr.aws/opensearchproject/opensearch:2.19.1"
+        environment:
+            - discovery.type=single-node
+            - bootstrap.memory_lock=true
+            - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+            - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD}
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+            nofile:
+                soft: 65536
+                hard: 65536
+        ports:
+            - "9200:9200"
+            - "9600:9600"
+        volumes:
+            - ./data/opensearch:/usr/share/opensearch/data
+        networks:
+            - monitoring_network
+    logstash:
+        container_name: "logstash"
+        image: "public.ecr.aws/opensearchproject/logstash-oss-with-opensearch-output-plugin:8.9.0"
+        environment:
+            - "LS_JAVA_OPTS=-Xms512m -Xmx512m"
+        ports:
+            - "12345:12345"
+        volumes:
+            - ./config/logstash/logstash.conf/:/logstash_dir/logstash.conf
+        #      - ./logstash.yml:/usr/share/logstash/config/logstash.yml
+        command: logstash -f /logstash_dir/logstash.conf
+        networks:
+            - monitoring_network
+        depends_on:
+            - opensearch
+
+networks:
+    monitoring_network:
+        name: "monitoring_network"
+        ipam:
+            config:
+                - subnet: 172.18.1.0/24
