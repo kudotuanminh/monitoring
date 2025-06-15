@@ -14,6 +14,7 @@ services:
         volumes:
             - ./data/grafana:/var/lib/grafana
             - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+            - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
             - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini
         networks:
             - monitoring_network
@@ -51,7 +52,7 @@ services:
         environment:
             - discovery.type=single-node
             - bootstrap.memory_lock=true
-            - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+            - "OPENSEARCH_JAVA_OPTS=-Xms2G -Xmx2G"
             - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD}
         ulimits:
             memlock:
@@ -62,7 +63,6 @@ services:
                 hard: 65536
         ports:
             - "9200:9200"
-            - "9600:9600"
         volumes:
             - ./data/opensearch:/usr/share/opensearch/data
         networks:
@@ -75,13 +75,114 @@ services:
         ports:
             - "12345:12345"
         volumes:
-            - ./config/logstash/logstash.conf/:/logstash_dir/logstash.conf
-        #      - ./logstash.yml:/usr/share/logstash/config/logstash.yml
+            - ./config/logstash/logstash.conf:/logstash_dir/logstash.conf
         command: logstash -f /logstash_dir/logstash.conf
         networks:
             - monitoring_network
         depends_on:
             - opensearch
+
+    wazuh.dashboard:
+        image: "wazuh/wazuh-dashboard:4.12.0"
+        hostname: "wazuh.dashboard"
+        restart: always
+        ports:
+            - "5602:5602"
+        environment:
+            - INDEXER_USERNAME=${WAZUH_INDEXER_USERNAME}
+            - INDEXER_PASSWORD=${WAZUH_INDEXER_PASSWORD}
+            - WAZUH_API_URL=https://wazuh-manager
+            - DASHBOARD_USERNAME=kibanaserver
+            - DASHBOARD_PASSWORD=kibanaserver
+            - API_USERNAME=${WAZUH_API_USERNAME}
+            - API_PASSWORD=${WAZUH_API_PASSWORD}
+        volumes:
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.dashboard.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.dashboard-key.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-dashboard/certs/root-ca.pem
+            - ./config/wazuh/wazuh_dashboard/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
+            - ./config/wazuh/wazuh_dashboard/wazuh.yml:/usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
+            - ./data/wazuh/wazuh-dashboard-config/:/usr/share/wazuh-dashboard/data/wazuh/config/
+            - ./data/wazuh/wazuh-dashboard-custom/:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom/
+        depends_on:
+            - wazuh.indexer
+        links:
+            - wazuh.indexer:wazuh.indexer
+            - wazuh.manager:wazuh.manager
+        networks:
+            - monitoring_network
+
+    wazuh.manager:
+        image: "wazuh/wazuh-manager:4.12.0"
+        hostname: "wazuh.manager"
+        restart: always
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+            nofile:
+                soft: 655360
+                hard: 655360
+        ports:
+            - "1514:1514"
+            - "1515:1515"
+            - "514:514/udp"
+            - "55000:55000"
+        environment:
+            - INDEXER_URL=https://wazuh.indexer:9201
+            - INDEXER_USERNAME=${WAZUH_INDEXER_USERNAME}
+            - INDEXER_PASSWORD=${WAZUH_INDEXER_PASSWORD}
+            - FILEBEAT_SSL_VERIFICATION_MODE=full
+            - SSL_CERTIFICATE_AUTHORITIES=/etc/ssl/root-ca.pem
+            - SSL_CERTIFICATE=/etc/ssl/filebeat.pem
+            - SSL_KEY=/etc/ssl/filebeat.key
+            - API_USERNAME=wazuh-wui
+            - API_PASSWORD=${WAZUH_API_PASSWORD}
+        volumes:
+            - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca-manager.pem:/etc/ssl/root-ca.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.manager.pem:/etc/ssl/filebeat.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.manager-key.pem:/etc/ssl/filebeat.key
+            - ./config/wazuh/wazuh_cluster/wazuh_manager.conf:/wazuh-config-mount/etc/ossec.conf
+            - ./data/wazuh/wazuh_api_configuration/:/var/ossec/api/configuration/
+            - ./data/wazuh/wazuh_etc/:/var/ossec/etc/
+            - ./data/wazuh/wazuh_logs/:/var/ossec/logs/
+            - ./data/wazuh/wazuh_queue/:/var/ossec/queue/
+            - ./data/wazuh/wazuh_var_multigroups/:/var/ossec/var/multigroups/
+            - ./data/wazuh/wazuh_integrations/:/var/ossec/integrations/
+            - ./data/wazuh/wazuh_active_response/:/var/ossec/active-response/bin/
+            - ./data/wazuh/wazuh_agentless/:/var/ossec/agentless/
+            - ./data/wazuh/wazuh_wodles/:/var/ossec/wodles/
+            - ./data/wazuh/filebeat_etc/:/etc/filebeat/
+            - ./data/wazuh/filebeat_var/:/var/lib/filebeat/
+        networks:
+            - monitoring_network
+
+    wazuh.indexer:
+        image: "wazuh/wazuh-indexer:4.12.0"
+        hostname: "wazuh.indexer"
+        restart: always
+        ports:
+            - "9201:9201"
+        environment:
+            - "OPENSEARCH_JAVA_OPTS=-Xms2G -Xmx2G"
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+            nofile:
+                soft: 65536
+                hard: 65536
+        volumes:
+            - ./data/wazuh/wazuh-indexer-data/:/var/lib/wazuh-indexer/
+            - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-indexer/certs/root-ca.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.indexer-key.pem:/usr/share/wazuh-indexer/certs/wazuh.indexer.key
+            - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.indexer.pem:/usr/share/wazuh-indexer/certs/wazuh.indexer.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/admin.pem:/usr/share/wazuh-indexer/certs/admin.pem
+            - ./data/wazuh/wazuh_indexer_ssl_certs/admin-key.pem:/usr/share/wazuh-indexer/certs/admin-key.pem
+            - ./config/wazuh/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+            - ./data/wazuh/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+        networks:
+            - monitoring_network
 
 networks:
     monitoring_network:

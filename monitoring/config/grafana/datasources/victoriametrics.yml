@@ -1,10 +1,10 @@
 datasources:
-  - name: VictoriaMetrics
-    type: prometheus
-    access: proxy
-    url: http://victoriametrics:8428
-    editable: true
-    isDefault: true
-    jsonData:
-      prometheusType: Prometheus
-      prometheusVersion: 2.24.0
+- name: VictoriaMetrics
+  type: prometheus
+  access: proxy
+  url: http://victoriametrics:8428
+  editable: true
+  isDefault: true
+  jsonData:
+    prometheusType: Prometheus
+    prometheusVersion: 2.24.0

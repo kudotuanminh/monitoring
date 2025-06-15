@@ -1,20 +1,20 @@
 datasources:
-- name: OpenSearch
-  type: grafana-opensearch-datasource
-  access: proxy
-  url: https://opensearch:9200
-  editable: true
-  isDefault: false
-  basicAuth: true
-  basicAuthUser: admin
-  secureJsonData:
-    basicAuthPassword: ${OPENSEARCH_ADMIN_PASSWORD}
-  jsonData:
-    version: "2.0"
-    timeField: "@timestamp"
-    logLevelField: "level"
-    logMessageField: "message"
-    maxConcurrentShardRequests: 5
-    includeFrozen: false
-    sigV4Auth: false
-    tlsSkipVerify: true
+  - name: OpenSearch
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: https://opensearch:9200
+    editable: true
+    isDefault: false
+    basicAuth: true
+    basicAuthUser: admin
+    secureJsonData:
+      basicAuthPassword: ${OPENSEARCH_ADMIN_PASSWORD}
+    jsonData:
+      version: "2.0"
+      timeField: "@timestamp"
+      logLevelField: "level"
+      logMessageField: "message"
+      maxConcurrentShardRequests: 5
+      includeFrozen: false
+      sigV4Auth: false
+      tlsSkipVerify: true
