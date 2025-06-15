@@ -129,24 +129,38 @@ echo "✓ Directory permissions set"
 
 # Generate indexer certificates
 echo "Generating indexer certificates..."
-if [ -f generate-indexer-certs.yml ]; then
-    if command -v docker-compose >/dev/null 2>&1; then
-        docker-compose -f generate-indexer-certs.yml run --rm generator
+if command -v docker >/dev/null 2>&1; then
+    # Check if required files exist
+    if [ -f config/wazuh/certs.yml ]; then
+        # Create certificates directory if it doesn't exist
+        mkdir -p data/wazuh/wazuh_indexer_ssl_certs
+
+        # Run certificate generator directly with Docker
+        docker run --rm \
+            --hostname wazuh-certs-generator \
+            -v "$(pwd)/data/wazuh/wazuh_indexer_ssl_certs:/certificates/" \
+            -v "$(pwd)/config/wazuh/certs.yml:/config/certs.yml" \
+            wazuh/wazuh-certs-generator:0.0.2
+
         echo "✓ Indexer certificates generated"
     else
-        echo "⚠ docker-compose not available - you may need to generate certificates manually"
-        echo "  Run: docker-compose -f generate-indexer-certs.yml run --rm generator"
+        echo "⚠ config/wazuh/certs.yml not found - skipping certificate generation"
+        echo "  Make sure the certificate configuration file exists"
     fi
 else
-    echo "⚠ generate-indexer-certs.yml not found - skipping certificate generation"
+    echo "⚠ Docker not available - you may need to generate certificates manually"
+    echo "  Run: docker run --rm --hostname wazuh-certs-generator \\"
+    echo "       -v \"\$(pwd)/data/wazuh/wazuh_indexer_ssl_certs:/certificates/\" \\"
+    echo "       -v \"\$(pwd)/config/wazuh/certs.yml:/config/certs.yml\" \\"
+    echo "       wazuh/wazuh-certs-generator:0.0.2"
 fi
 
 # Generate Wazuh indexer internal_users.yml with hashed admin password
 echo "Generating Wazuh indexer internal_users.yml..."
 if command -v docker >/dev/null 2>&1; then
     if [ -n "$WAZUH_INDEXER_PASSWORD" ]; then
-        # Generate bcrypt hash using Wazuh indexer container
-        HASHED_PASSWORD=$(echo "$WAZUH_INDEXER_PASSWORD" | docker run --rm -i wazuh/wazuh-indexer:4.12.0 bash -c '/usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh')
+        # Generate bcrypt hash using Wazuh indexer container (fix console allocation issue)
+        HASHED_PASSWORD=$(printf "%s" "$WAZUH_INDEXER_PASSWORD" | docker run --rm -i wazuh/wazuh-indexer:4.12.0 /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh)
 
         if [ -n "$HASHED_PASSWORD" ]; then
             # Create directory if it doesn't exist
