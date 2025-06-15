@@ -122,6 +122,22 @@ echo "Setting directory permissions..."
 chmod -R 755 data/
 echo "✓ Directory permissions set"
 
+# Set vm.max_map_count for OpenSearch/Elasticsearch
+echo "Setting vm.max_map_count for OpenSearch..."
+if command -v sysctl >/dev/null 2>&1; then
+    if sudo sysctl -w vm.max_map_count=262144 >/dev/null 2>&1; then
+        echo "✓ vm.max_map_count set to 262144"
+    else
+        echo "⚠ Failed to set vm.max_map_count - you may need to run the script with sudo:"
+        echo "  sudo ./init.sh"
+        echo "  Or manually run: sudo sysctl -w vm.max_map_count=262144"
+        echo "  Or add 'vm.max_map_count=262144' to /etc/sysctl.conf for persistence"
+    fi
+else
+    echo "⚠ sysctl not available - you may need to set vm.max_map_count manually:"
+    echo "  On Linux: sudo sysctl -w vm.max_map_count=262144"
+fi
+
 # Generate indexer certificates
 echo "Generating indexer certificates..."
 if command -v docker >/dev/null 2>&1; then
@@ -157,8 +173,34 @@ if command -v docker >/dev/null 2>&1; then
     INDEXER_PASSWORD=$(grep "WAZUH_INDEXER_PASSWORD=" .env | cut -d"'" -f2)
 
     if [ -n "$INDEXER_PASSWORD" ]; then
-        # Generate bcrypt hash using Wazuh indexer container (use here-string to avoid console issues)
-        HASHED_PASSWORD=$(docker run --rm wazuh/wazuh-indexer:4.12.0 /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh "$INDEXER_PASSWORD")
+        # Try multiple approaches to generate bcrypt hash
+        HASHED_PASSWORD=""
+
+        # Method 1: Try htpasswd if available
+        if command -v htpasswd >/dev/null 2>&1; then
+            echo "Using htpasswd for bcrypt hashing..."
+            HASHED_PASSWORD=$(htpasswd -bnBC 12 "" "$INDEXER_PASSWORD" | tr -d ':\n' | sed 's/^.//')
+        # Method 2: Try Python with bcrypt if available
+        elif command -v python3 >/dev/null 2>&1 && python3 -c "import bcrypt" 2>/dev/null; then
+            echo "Using Python bcrypt for hashing..."
+            HASHED_PASSWORD=$(python3 -c "
+import bcrypt
+import sys
+password = '$INDEXER_PASSWORD'.encode('utf-8')
+hashed = bcrypt.hashpw(password, bcrypt.gensalt(rounds=12))
+print(hashed.decode('utf-8'))
+")
+        # Method 3: Use a pre-generated hash as fallback
+        else
+            echo "⚠ No bcrypt tools available, using fallback approach..."
+            echo "You can manually generate a bcrypt hash and update the file later."
+
+            # Default bcrypt hash for "SecretPassword" - users should change this
+            HASHED_PASSWORD='$2y$12$K/SpwjtB.wOHJ/Nc6GVRDuc1h0rM1DfvziFRNPtk27P.c4yDr9njO'
+            echo "⚠ Using default hash - change this by running:"
+            echo "  docker run --rm -ti wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh"
+            echo "  Then update data/wazuh/wazuh_indexer/internal_users.yml with the generated hash"
+        fi
 
         if [ -n "$HASHED_PASSWORD" ]; then
             # Create directory if it doesn't exist
