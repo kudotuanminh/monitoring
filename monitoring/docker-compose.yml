@@ -14,7 +14,6 @@ services:
         volumes:
             - ./data/grafana:/var/lib/grafana
             - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
-            - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
             - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini
         networks:
             - monitoring_network

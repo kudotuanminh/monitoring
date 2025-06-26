@@ -29,6 +29,10 @@ if [ ! -f .env ]; then
     read -s -p "Enter Wazuh indexer password (will be hidden): " WAZUH_INDEXER_PASSWORD
     echo ""
 
+    # Prompt for Wazuh indexer hashed password
+    read -s -p "Enter Wazuh indexer hashed password (bcrypt hash, will be hidden): " WAZUH_INDEXER_HASHED_PASSWORD
+    echo ""
+
     # Prompt for Wazuh API username
     read -p "Enter Wazuh API username [wazuh-wui]: " WAZUH_API_USERNAME
     WAZUH_API_USERNAME=${WAZUH_API_USERNAME:-wazuh-wui}
@@ -45,6 +49,7 @@ GF_ENDPOINT='${GF_ENDPOINT}'
 GF_ADMIN_USER='${GF_ADMIN_USER}'
 GF_ADMIN_PASSWORD='${GF_ADMIN_PASSWORD}'
 WAZUH_INDEXER_PASSWORD='${WAZUH_INDEXER_PASSWORD}'
+WAZUH_INDEXER_HASHED_PASSWORD='${WAZUH_INDEXER_HASHED_PASSWORD}'
 WAZUH_API_USERNAME='${WAZUH_API_USERNAME}'
 WAZUH_API_PASSWORD='${WAZUH_API_PASSWORD}'
 EOF
@@ -166,48 +171,17 @@ else
     echo "       wazuh/wazuh-certs-generator:0.0.2"
 fi
 
-# Generate Wazuh indexer internal_users.yml with hashed admin password
+# Generate Wazuh indexer internal_users.yml with admin password
 echo "Generating Wazuh indexer internal_users.yml..."
-if command -v docker >/dev/null 2>&1; then
-    # Get the password from .env file (remove quotes)
-    INDEXER_PASSWORD=$(grep "WAZUH_INDEXER_PASSWORD=" .env | cut -d"'" -f2)
+# Get the hashed password from .env file (remove quotes)
+INDEXER_HASHED_PASSWORD=$(grep "WAZUH_INDEXER_HASHED_PASSWORD=" .env | cut -d"'" -f2)
 
-    if [ -n "$INDEXER_PASSWORD" ]; then
-        # Try multiple approaches to generate bcrypt hash
-        HASHED_PASSWORD=""
+if [ -n "$INDEXER_HASHED_PASSWORD" ]; then
+    # Create directory if it doesn't exist
+    mkdir -p data/wazuh/wazuh_indexer
 
-        # Method 1: Try htpasswd if available
-        if command -v htpasswd >/dev/null 2>&1; then
-            echo "Using htpasswd for bcrypt hashing..."
-            HASHED_PASSWORD=$(htpasswd -bnBC 12 "" "$INDEXER_PASSWORD" | tr -d ':\n' | sed 's/^.//')
-        # Method 2: Try Python with bcrypt if available
-        elif command -v python3 >/dev/null 2>&1 && python3 -c "import bcrypt" 2>/dev/null; then
-            echo "Using Python bcrypt for hashing..."
-            HASHED_PASSWORD=$(python3 -c "
-import bcrypt
-import sys
-password = '$INDEXER_PASSWORD'.encode('utf-8')
-hashed = bcrypt.hashpw(password, bcrypt.gensalt(rounds=12))
-print(hashed.decode('utf-8'))
-")
-        # Method 3: Use a pre-generated hash as fallback
-        else
-            echo "⚠ No bcrypt tools available, using fallback approach..."
-            echo "You can manually generate a bcrypt hash and update the file later."
-
-            # Default bcrypt hash for "SecretPassword" - users should change this
-            HASHED_PASSWORD='$2y$12$K/SpwjtB.wOHJ/Nc6GVRDuc1h0rM1DfvziFRNPtk27P.c4yDr9njO'
-            echo "⚠ Using default hash - change this by running:"
-            echo "  docker run --rm -ti wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh"
-            echo "  Then update data/wazuh/wazuh_indexer/internal_users.yml with the generated hash"
-        fi
-
-        if [ -n "$HASHED_PASSWORD" ]; then
-            # Create directory if it doesn't exist
-            mkdir -p data/wazuh/wazuh_indexer
-
-            # Generate the complete internal_users.yml file
-            cat > data/wazuh/wazuh_indexer/internal_users.yml << EOF
+    # Generate the complete internal_users.yml file
+    cat > data/wazuh/wazuh_indexer/internal_users.yml << EOF
 ---
 # This is the internal user database
 # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
@@ -221,7 +195,7 @@ _meta:
 ## Demo users
 
 admin:
-  hash: "$HASHED_PASSWORD"
+  hash: "$INDEXER_HASHED_PASSWORD"
   reserved: true
   backend_roles:
   - "admin"
@@ -266,16 +240,9 @@ snapshotrestore:
   description: "Demo snapshotrestore user"
 EOF
 
-            echo "✓ Wazuh indexer internal_users.yml generated with hashed admin password"
-        else
-            echo "⚠ Failed to generate password hash"
-        fi
-    else
-        echo "⚠ Could not find WAZUH_INDEXER_PASSWORD in .env file"
-    fi
+    echo "✓ Wazuh indexer internal_users.yml generated with hashed admin password"
 else
-    echo "⚠ Docker not available - you may need to hash the password manually"
-    echo "  Run: docker run --rm -ti wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh"
+    echo "⚠ Could not find WAZUH_INDEXER_HASHED_PASSWORD in .env file"
 fi
 
 echo ""
