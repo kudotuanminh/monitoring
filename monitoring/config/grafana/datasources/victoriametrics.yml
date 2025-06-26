@@ -1,3 +1,5 @@
+apiVersion: 1
+
 datasources:
   - name: VictoriaMetrics
     type: prometheus
@@ -6,6 +8,7 @@ datasources:
     uid: victoriametrics
     editable: true
     isDefault: true
+
     jsonData:
-        prometheusType: Prometheus
-        prometheusVersion: 2.24.0
+      prometheusType: Prometheus
+      prometheusVersion: 2.24.0

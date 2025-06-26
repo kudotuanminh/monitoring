@@ -1,3 +1,5 @@
+apiVersion: 1
+
 datasources:
   - name: OpenSearch
     type: grafana-opensearch-datasource
@@ -6,16 +8,18 @@ datasources:
     uid: opensearch
     editable: true
     isDefault: false
+
     basicAuth: true
     basicAuthUser: admin
     secureJsonData:
-        basicAuthPassword: ${OPENSEARCH_ADMIN_PASSWORD}
+      basicAuthPassword: ${OPENSEARCH_ADMIN_PASSWORD}
+
     jsonData:
-        version: "2.0"
-        timeField: "@timestamp"
-        logLevelField: "level"
-        logMessageField: "message"
-        maxConcurrentShardRequests: 5
-        includeFrozen: false
-        sigV4Auth: false
-        tlsSkipVerify: true
+      version: "2.0"
+      timeField: "@timestamp"
+      logLevelField: "level"
+      logMessageField: "message"
+      maxConcurrentShardRequests: 5
+      includeFrozen: false
+      sigV4Auth: false
+      tlsSkipVerify: true
