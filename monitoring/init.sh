@@ -54,6 +54,20 @@ WAZUH_API_USERNAME='${WAZUH_API_USERNAME}'
 WAZUH_API_PASSWORD='${WAZUH_API_PASSWORD}'
 EOF
     echo "✓ .env file created with your configuration"
+
+    # Generate wazuh.yml with actual values
+    echo "Generating wazuh.yml configuration..."
+    mkdir -p data/wazuh/wazuh_dashboard
+    cat > data/wazuh/wazuh_dashboard/wazuh.yml << EOF
+hosts:
+- 1513629884013:
+    url: "https://wazuh.manager"
+    port: 55000
+    username: ${WAZUH_API_USERNAME}
+    password: "${WAZUH_API_PASSWORD}"
+    run_as: false
+EOF
+    echo "✓ wazuh.yml configuration generated"
 else
     echo "✓ .env file already exists"
 fi
@@ -78,6 +92,15 @@ echo "Setting OpenSearch data ownership (1000:1000)..."
 if command -v chown >/dev/null 2>&1; then
     sudo chown -R 1000:1000 data/opensearch
     echo "✓ OpenSearch data ownership set"
+else
+    echo "⚠ chown not available - you may need to set ownership manually"
+fi
+
+# Set ownership for Wazuh config (1000:1000)
+echo "Setting Wazuh config ownership (1000:1000)..."
+if command -v chown >/dev/null 2>&1; then
+    sudo chown -R 1000:1000 config/wazuh
+    echo "✓ Wazuh config ownership set"
 else
     echo "⚠ chown not available - you may need to set ownership manually"
 fi
