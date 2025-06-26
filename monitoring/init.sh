@@ -54,20 +54,6 @@ WAZUH_API_USERNAME='${WAZUH_API_USERNAME}'
 WAZUH_API_PASSWORD='${WAZUH_API_PASSWORD}'
 EOF
     echo "✓ .env file created with your configuration"
-
-    # Generate wazuh.yml with actual values
-    echo "Generating wazuh.yml configuration..."
-    mkdir -p data/wazuh/wazuh_dashboard
-    cat > data/wazuh/wazuh_dashboard/wazuh.yml << EOF
-hosts:
-- 1513629884013:
-    url: "https://wazuh.manager"
-    port: 55000
-    username: ${WAZUH_API_USERNAME}
-    password: "${WAZUH_API_PASSWORD}"
-    run_as: false
-EOF
-    echo "✓ wazuh.yml configuration generated"
 else
     echo "✓ .env file already exists"
 fi
@@ -96,15 +82,6 @@ else
     echo "⚠ chown not available - you may need to set ownership manually"
 fi
 
-# Set ownership for Wazuh config (1000:1000)
-echo "Setting Wazuh config ownership (1000:1000)..."
-if command -v chown >/dev/null 2>&1; then
-    sudo chown -R 1000:1000 config/wazuh
-    echo "✓ Wazuh config ownership set"
-else
-    echo "⚠ chown not available - you may need to set ownership manually"
-fi
-
 # Set ownership for Wazuh folders
 echo "Setting Wazuh data ownership..."
 if command -v chown >/dev/null 2>&1; then
@@ -123,8 +100,11 @@ if command -v chown >/dev/null 2>&1; then
     mkdir -p data/wazuh/wazuh_queue
     mkdir -p data/wazuh/wazuh_var_multigroups
     mkdir -p data/wazuh/wazuh_wodles
+    mkdir -p data/wazuh/wazuh_dashboard
+    mkdir -p data/wazuh/wazuh_indexer
 
     # Set specific ownership based on your requirements
+    sudo chown -R 1000:1000 config/wazuh
     sudo chown -R root:root data/wazuh/filebeat_etc
     sudo chown -R root:root data/wazuh/filebeat_var
     sudo chown -R root:root data/wazuh/wazuh-dashboard-config
@@ -194,15 +174,29 @@ else
     echo "       wazuh/wazuh-certs-generator:0.0.2"
 fi
 
+# Generate wazuh.yml with actual values from .env file
+echo "Generating wazuh.yml configuration..."
+# Get API credentials from .env file (remove quotes)
+WAZUH_API_USERNAME_VALUE=$(grep "WAZUH_API_USERNAME=" .env | cut -d"'" -f2)
+WAZUH_API_PASSWORD_VALUE=$(grep "WAZUH_API_PASSWORD=" .env | cut -d"'" -f2)
+
+cat > data/wazuh/wazuh_dashboard/wazuh.yml << EOF
+hosts:
+- 1513629884013:
+    url: "https://wazuh.manager"
+    port: 55000
+    username: ${WAZUH_API_USERNAME_VALUE}
+    password: "${WAZUH_API_PASSWORD_VALUE}"
+    run_as: false
+EOF
+echo "✓ wazuh.yml configuration generated"
+
 # Generate Wazuh indexer internal_users.yml with admin password
 echo "Generating Wazuh indexer internal_users.yml..."
 # Get the hashed password from .env file (remove quotes)
 INDEXER_HASHED_PASSWORD=$(grep "WAZUH_INDEXER_HASHED_PASSWORD=" .env | cut -d"'" -f2)
 
 if [ -n "$INDEXER_HASHED_PASSWORD" ]; then
-    # Create directory if it doesn't exist
-    mkdir -p data/wazuh/wazuh_indexer
-
     # Generate the complete internal_users.yml file
     cat > data/wazuh/wazuh_indexer/internal_users.yml << EOF
 ---
