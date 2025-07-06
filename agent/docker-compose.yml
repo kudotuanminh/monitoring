@@ -1,0 +1,20 @@
+services:
+  telegraf:
+    container_name: 'telegraf'
+    image: 'telegraf:1.30'
+    restart: unless-stopped
+    user: telegraf:${DOCKER_GID:-998}
+    volumes:
+      - ./config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /:/hostfs:ro
+    environment:
+      - HOST_ETC=/hostfs/etc
+      - HOST_PROC=/hostfs/proc
+      - HOST_SYS=/hostfs/sys
+      - HOST_MOUNT_PREFIX=/hostfs
+    env_file:
+      - .env
+    network_mode: host
+
+#  fluent-bit:
