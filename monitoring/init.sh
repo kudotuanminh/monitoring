@@ -10,7 +10,7 @@ if [ ! -f .env ]; then
     echo ""
 
     # Prompt for OpenSearch admin password
-    read -s -p "Enter OpenSearch admin password (will be hidden): " OPENSEARCH_PASSWORD
+    read -p "Enter OpenSearch admin password (Don't use `$` or `&` in your passwords. These characters can cause errors during deployment): " OPENSEARCH_PASSWORD
     echo ""
 
     # Prompt for Grafana endpoint
@@ -22,23 +22,23 @@ if [ ! -f .env ]; then
     GF_ADMIN_USER=${GF_ADMIN_USER:-admin}
 
     # Prompt for Grafana admin password
-    read -s -p "Enter Grafana admin password (will be hidden): " GF_ADMIN_PASSWORD
+    read -p "Enter Grafana admin password: " GF_ADMIN_PASSWORD
     echo ""
 
     # Prompt for Wazuh indexer password
-    read -s -p "Enter Wazuh indexer password (will be hidden): " WAZUH_INDEXER_PASSWORD
+    read -p "Enter Wazuh indexer password (Don't use `$` or `&` in your passwords. These characters can cause errors during deployment): " WAZUH_INDEXER_PASSWORD
     echo ""
 
     # Prompt for Wazuh indexer hashed password
-    read -s -p "Enter Wazuh indexer hashed password (bcrypt hash, will be hidden): " WAZUH_INDEXER_HASHED_PASSWORD
+    read -p "Enter Wazuh indexer hashed password (bcrypt hash): " WAZUH_INDEXER_HASHED_PASSWORD
     echo ""
 
     # Prompt for Kibana server password
-    read -s -p "Enter Kibana server password (will be hidden): " WAZUH_KIBANA_PASSWORD
+    read -p "Enter Kibana server password (Don't use `$` or `&` in your passwords. These characters can cause errors during deployment): " WAZUH_KIBANA_PASSWORD
     echo ""
 
     # Prompt for Kibana server hashed password
-    read -s -p "Enter Kibana server hashed password (bcrypt hash, will be hidden): " WAZUH_KIBANA_HASHED_PASSWORD
+    read -p "Enter Kibana server hashed password (bcrypt hash): " WAZUH_KIBANA_HASHED_PASSWORD
     echo ""
 
     # Prompt for Wazuh API username
@@ -46,7 +46,7 @@ if [ ! -f .env ]; then
     WAZUH_API_USERNAME=${WAZUH_API_USERNAME:-wazuh-wui}
 
     # Prompt for Wazuh API password
-    read -s -p "Enter Wazuh API password (will be hidden): " WAZUH_API_PASSWORD
+    read -p "Enter Wazuh API password: " WAZUH_API_PASSWORD
     echo ""
     echo ""
 

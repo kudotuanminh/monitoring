@@ -15,9 +15,8 @@ datasources:
       basicAuthPassword: ${OPENSEARCH_ADMIN_PASSWORD}
 
     jsonData:
-      version: 2
+      version: "2.19.1"
       timeField: "@timestamp"
-      indexName: "opensearch-logstash-docker*"
       logLevelField: "level"
       logMessageField: "message"
       maxConcurrentShardRequests: 5

@@ -66,6 +66,10 @@ This monitoring stack provides:
    - Wazuh Dashboard: https://localhost:5602
    - VictoriaMetrics: http://localhost:8428
 
+## Important Notes
+-   The initialization script will create a `.env` file containing sensitive information. Ensure this file is kept secure.
+-   By default, Grafana does not get OpenSearch's version information. You may need to manually configure the OpenSearch data source in Grafana after the initial setup.
+
 ## Manual Startup (Alternative)
 
 If you prefer to start services manually or if the automatic startup fails:

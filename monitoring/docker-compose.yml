@@ -17,6 +17,9 @@ services:
             - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini
         networks:
             - monitoring_network
+        depends_on:
+            - victoriametrics
+            - opensearch
     victoriametrics:
         container_name: "victoria-metrics"
         image: "victoriametrics/victoria-metrics:v1.119.0"
