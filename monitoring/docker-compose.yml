@@ -71,6 +71,7 @@ services:
         image: "public.ecr.aws/opensearchproject/logstash-oss-with-opensearch-output-plugin:8.9.0"
         environment:
             - "LS_JAVA_OPTS=-Xms1G -Xmx2G"
+            - OPENSEARCH_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD}
         ports:
             - "12345:12345"
         volumes:

@@ -63,7 +63,7 @@ This monitoring stack provides:
 5. **Access the services:**
    - Grafana: http://localhost:3000
    - OpenSearch Dashboards: http://localhost:5601
-   - Wazuh Dashboard: http://localhost:443
+   - Wazuh Dashboard: https://localhost:5602
    - VictoriaMetrics: http://localhost:8428
 
 ## Manual Startup (Alternative)
@@ -115,17 +115,16 @@ $2y$12$K/SpwjtB.wOHJ/Nc6GVRDuc1h0rM1DfvziFRNPtk27P.c4yDr9njO
 monitoring/
 ├── config/
 │   ├── grafana/
-│   │   ├── datasources/          # Grafana datasource configurations
-│   │   ├── dashboards/           # Dashboard provisioning
+│   │   ├── datasources/         # Grafana datasource configurations
 │   │   └── grafana.ini          # Grafana main configuration
 │   └── wazuh/
-│       ├── wazuh_dashboard/      # Wazuh dashboard configuration
-│       ├── wazuh_indexer/        # Wazuh indexer configuration
+│       ├── wazuh_dashboard/     # Wazuh dashboard configuration
+│       ├── wazuh_indexer/       # Wazuh indexer configuration
 │       └── certs.yml            # Certificate generation configuration
 ├── data/                        # Persistent data volumes (auto-created)
 ├── docker-compose.yml           # Docker services definition
-├── init.sh                     # Initialization script
-└── .env                        # Environment variables (auto-created)
+├── init.sh                      # Initialization script
+└── .env                         # Environment variables (auto-created)
 ```
 
 ### Environment Variables
@@ -221,6 +220,6 @@ docker-compose logs opensearch
 
 Important directories to backup:
 
--   `data/` - All persistent data
+-   `data/` - Some persistent data
 -   `config/` - Configuration files
 -   `.env` - Environment variables
