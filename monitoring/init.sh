@@ -123,7 +123,8 @@ sudo mkdir -p data/wazuh/wazuh_indexer
 sudo chown -R 1000:1000 data/wazuh
 sudo chown -R 1000:1000 config/wazuh
 sudo chown -R 1000:1000 config/logstash
-sudo chmod -R 644 config
+sudo chown -R 472:472 config/grafana
+sudo chmod -R 744 config
 
 cat > data/wazuh/wazuh_dashboard/wazuh.yml << EOF
 hosts:
