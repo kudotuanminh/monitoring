@@ -111,6 +111,7 @@ WAZUH_API_PASSWORD_VALUE=$(grep "WAZUH_API_PASSWORD=" .env | cut -d"'" -f2)
 sudo mkdir -p data/wazuh/wazuh_dashboard
 sudo mkdir -p data/wazuh/wazuh_indexer
 sudo chown -R 1000:1000 data/wazuh
+sudo chown -R 1000:1000 config/wazuh
 
 cat > data/wazuh/wazuh_dashboard/wazuh.yml << EOF
 hosts:
