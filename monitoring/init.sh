@@ -120,11 +120,6 @@ WAZUH_API_PASSWORD_VALUE=$(grep "WAZUH_API_PASSWORD=" .env | cut -d"'" -f2)
 
 sudo mkdir -p data/wazuh/wazuh_dashboard
 sudo mkdir -p data/wazuh/wazuh_indexer
-sudo chown -R 1000:1000 data/wazuh
-sudo chown -R 1000:1000 config/wazuh
-sudo chown -R 1000:1000 config/logstash
-sudo chown -R 472:472 config/grafana
-sudo chmod -R 744 config
 
 cat > data/wazuh/wazuh_dashboard/wazuh.yml << EOF
 hosts:
@@ -208,6 +203,12 @@ EOF
 else
     echo "⚠ Could not find WAZUH_INDEXER_HASHED_PASSWORD or WAZUH_KIBANA_HASHED_PASSWORD in .env file"
 fi
+
+sudo chown -R 1000:1000 data/wazuh
+sudo chown -R 1000:1000 config/wazuh
+sudo chown -R 1000:1000 config/logstash
+sudo chown -R 472:472 config/grafana
+sudo chmod -R 744 config
 
 # Start the monitoring stack
 echo "Starting monitoring stack with Docker Compose..."
