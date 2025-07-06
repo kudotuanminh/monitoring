@@ -15,6 +15,7 @@ datasources:
       basicAuthPassword: ${OPENSEARCH_ADMIN_PASSWORD}
 
     jsonData:
+      index: "opensearch-logstash-docker*"
       version: "2.19.1"
       timeField: "@timestamp"
       logLevelField: "level"

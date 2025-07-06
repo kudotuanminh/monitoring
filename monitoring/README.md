@@ -69,6 +69,7 @@ This monitoring stack provides:
 ## Important Notes
 -   The initialization script will create a `.env` file containing sensitive information. Ensure this file is kept secure.
 -   By default, Grafana does not get OpenSearch's version information. You may need to manually configure the OpenSearch data source in Grafana after the initial setup.
+-   Manually import Grafana dashboards from `dashboards/`.
 
 ## Manual Startup (Alternative)
 

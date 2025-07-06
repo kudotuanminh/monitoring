@@ -106,13 +106,15 @@ else
     echo "  sudo WAZUH_MANAGER='$MONITORING_IP' WAZUH_AGENT_NAME='$AGENT_HOSTNAME' rpm -ihv wazuh-agent-4.12.0-1.x86_64.rpm"
 fi
 
-# Start Telegraf if docker-compose is available
+sudo chmod -R 744 config
+
+# Start the agent stack
 echo ""
-echo "Starting Telegraf monitoring..."
+echo "Starting agent stack..."
 
 if command -v docker-compose >/dev/null 2>&1; then
     docker-compose up -d
-    echo "✓ Telegraf started with Docker Compose (using group ID: $DOCKER_GID)"
+    echo "✓ Agent stack started"
 else
     echo "⚠ docker-compose not available - you'll need to start manually:"
     echo "  docker-compose up -d"
