@@ -108,6 +108,9 @@ echo "Generating wazuh.yml configuration..."
 WAZUH_API_USERNAME_VALUE=$(grep "WAZUH_API_USERNAME=" .env | cut -d"'" -f2)
 WAZUH_API_PASSWORD_VALUE=$(grep "WAZUH_API_PASSWORD=" .env | cut -d"'" -f2)
 
+mkdir -p data/wazuh/wazuh_dashboard
+mkdir -p data/wazuh/wazuh_indexer
+
 cat > data/wazuh/wazuh_dashboard/wazuh.yml << EOF
 hosts:
 - 1513629884013:
