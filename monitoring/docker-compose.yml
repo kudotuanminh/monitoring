@@ -12,7 +12,7 @@ services:
             - GF_INSTALL_PLUGINS=grafana-opensearch-datasource
             - OPENSEARCH_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD}
         volumes:
-            - ./data/grafana:/var/lib/grafana
+            - grafana_data:/var/lib/grafana
             - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
             - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini
         networks:
@@ -28,7 +28,7 @@ services:
         ports:
             - "8428:8428"
         volumes:
-            - ./data/victoriametrics:/victoriametrics
+            - victoriametrics_data:/victoriametrics
         networks:
             - monitoring_network
 
@@ -63,7 +63,7 @@ services:
         ports:
             - "9200:9200"
         volumes:
-            - ./data/opensearch:/usr/share/opensearch/data
+            - opensearch_data:/usr/share/opensearch/data
         networks:
             - monitoring_network
     logstash:
@@ -96,13 +96,15 @@ services:
             - API_USERNAME=${WAZUH_API_USERNAME}
             - API_PASSWORD=${WAZUH_API_PASSWORD}
         volumes:
+            - ./config/wazuh/wazuh_dashboard/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
+
+            - ./data/wazuh/wazuh_dashboard/wazuh.yml:/usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
             - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.dashboard.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem
             - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.dashboard-key.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem
             - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-dashboard/certs/root-ca.pem
-            - ./config/wazuh/wazuh_dashboard/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
-            - ./data/wazuh/wazuh_dashboard/wazuh.yml:/usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
-            - ./data/wazuh/wazuh-dashboard-config/:/usr/share/wazuh-dashboard/data/wazuh/config/
-            - ./data/wazuh/wazuh-dashboard-custom/:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom/
+
+            - wazuh-dashboard-config:/usr/share/wazuh-dashboard/data/wazuh/config
+            - wazuh-dashboard-custom:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
         depends_on:
             - wazuh.indexer
         links:
@@ -135,24 +137,26 @@ services:
             - SSL_CERTIFICATE_AUTHORITIES=/etc/ssl/root-ca.pem
             - SSL_CERTIFICATE=/etc/ssl/filebeat.pem
             - SSL_KEY=/etc/ssl/filebeat.key
-            - API_USERNAME=wazuh-wui
+            - API_USERNAME=${WAZUH_API_USERNAME}
             - API_PASSWORD=${WAZUH_API_PASSWORD}
         volumes:
+            - ./config/wazuh/wazuh_cluster/wazuh_manager.conf:/wazuh-config-mount/etc/ossec.conf
+
             - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca-manager.pem:/etc/ssl/root-ca.pem
             - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.manager.pem:/etc/ssl/filebeat.pem
             - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.manager-key.pem:/etc/ssl/filebeat.key
-            - ./config/wazuh/wazuh_cluster/wazuh_manager.conf:/wazuh-config-mount/etc/ossec.conf
-            - ./data/wazuh/wazuh_api_configuration/:/var/ossec/api/configuration/
-            - ./data/wazuh/wazuh_etc/:/var/ossec/etc/
-            - ./data/wazuh/wazuh_logs/:/var/ossec/logs/
-            - ./data/wazuh/wazuh_queue/:/var/ossec/queue/
-            - ./data/wazuh/wazuh_var_multigroups/:/var/ossec/var/multigroups/
-            - ./data/wazuh/wazuh_integrations/:/var/ossec/integrations/
-            - ./data/wazuh/wazuh_active_response/:/var/ossec/active-response/bin/
-            - ./data/wazuh/wazuh_agentless/:/var/ossec/agentless/
-            - ./data/wazuh/wazuh_wodles/:/var/ossec/wodles/
-            - ./data/wazuh/filebeat_etc/:/etc/filebeat/
-            - ./data/wazuh/filebeat_var/:/var/lib/filebeat/
+
+            - wazuh_api_configuration:/var/ossec/api/configuration
+            - wazuh_etc:/var/ossec/etc
+            - wazuh_logs:/var/ossec/logs
+            - wazuh_queue:/var/ossec/queue
+            - wazuh_var_multigroups:/var/ossec/var/multigroups
+            - wazuh_integrations:/var/ossec/integrations
+            - wazuh_active_response:/var/ossec/active-response/bin
+            - wazuh_agentless:/var/ossec/agentless
+            - wazuh_wodles:/var/ossec/wodles
+            - filebeat_etc:/etc/filebeat
+            - filebeat_var:/var/lib/filebeat
         networks:
             - monitoring_network
 
@@ -172,14 +176,16 @@ services:
                 soft: 65536
                 hard: 65536
         volumes:
-            - ./data/wazuh/wazuh-indexer-data/:/var/lib/wazuh-indexer/
+            - ./config/wazuh/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+
+            - ./data/wazuh/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
             - ./data/wazuh/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-indexer/certs/root-ca.pem
             - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.indexer-key.pem:/usr/share/wazuh-indexer/certs/wazuh.indexer.key
             - ./data/wazuh/wazuh_indexer_ssl_certs/wazuh.indexer.pem:/usr/share/wazuh-indexer/certs/wazuh.indexer.pem
             - ./data/wazuh/wazuh_indexer_ssl_certs/admin.pem:/usr/share/wazuh-indexer/certs/admin.pem
             - ./data/wazuh/wazuh_indexer_ssl_certs/admin-key.pem:/usr/share/wazuh-indexer/certs/admin-key.pem
-            - ./config/wazuh/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
-            - ./data/wazuh/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+
+            - wazuh-indexer-data:/var/lib/wazuh-indexer
         networks:
             - monitoring_network
 
@@ -189,3 +195,39 @@ networks:
         ipam:
             config:
                 - subnet: 172.18.1.0/24
+
+volumes:
+    grafana_data:
+        driver: local
+    victoriametrics_data:
+        driver: local
+    opensearch_data:
+        driver: local
+    wazuh-dashboard-config:
+        driver: local
+    wazuh-dashboard-custom:
+        driver: local
+    wazuh_api_configuration:
+        driver: local
+    wazuh_etc:
+        driver: local
+    wazuh_logs:
+        driver: local
+    wazuh_queue:
+        driver: local
+    wazuh_var_multigroups:
+        driver: local
+    wazuh_integrations:
+        driver: local
+    wazuh_active_response:
+        driver: local
+    wazuh_agentless:
+        driver: local
+    wazuh_wodles:
+        driver: local
+    filebeat_etc:
+        driver: local
+    filebeat_var:
+        driver: local
+    wazuh-indexer-data:
+        driver: local
