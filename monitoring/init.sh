@@ -33,6 +33,14 @@ if [ ! -f .env ]; then
     read -s -p "Enter Wazuh indexer hashed password (bcrypt hash, will be hidden): " WAZUH_INDEXER_HASHED_PASSWORD
     echo ""
 
+    # Prompt for Kibana server password
+    read -s -p "Enter Kibana server password (will be hidden): " WAZUH_KIBANA_PASSWORD
+    echo ""
+
+    # Prompt for Kibana server hashed password
+    read -s -p "Enter Kibana server hashed password (bcrypt hash, will be hidden): " WAZUH_KIBANA_HASHED_PASSWORD
+    echo ""
+
     # Prompt for Wazuh API username
     read -p "Enter Wazuh API username [wazuh-wui]: " WAZUH_API_USERNAME
     WAZUH_API_USERNAME=${WAZUH_API_USERNAME:-wazuh-wui}
@@ -50,6 +58,8 @@ GF_ADMIN_USER='${GF_ADMIN_USER}'
 GF_ADMIN_PASSWORD='${GF_ADMIN_PASSWORD}'
 WAZUH_INDEXER_PASSWORD='${WAZUH_INDEXER_PASSWORD}'
 WAZUH_INDEXER_HASHED_PASSWORD='${WAZUH_INDEXER_HASHED_PASSWORD}'
+WAZUH_KIBANA_PASSWORD='${WAZUH_KIBANA_PASSWORD}'
+WAZUH_KIBANA_HASHED_PASSWORD='${WAZUH_KIBANA_HASHED_PASSWORD}'
 WAZUH_API_USERNAME='${WAZUH_API_USERNAME}'
 WAZUH_API_PASSWORD='${WAZUH_API_PASSWORD}'
 EOF
@@ -128,8 +138,9 @@ echo "✓ wazuh.yml configuration generated"
 echo "Generating Wazuh indexer internal_users.yml..."
 # Get the hashed password from .env file (remove quotes)
 INDEXER_HASHED_PASSWORD=$(grep "WAZUH_INDEXER_HASHED_PASSWORD=" .env | cut -d"'" -f2)
+WAZUH_KIBANA_HASHED_PASSWORD=$(grep "WAZUH_KIBANA_HASHED_PASSWORD=" .env | cut -d"'" -f2)
 
-if [ -n "$INDEXER_HASHED_PASSWORD" ]; then
+if [ -n "$INDEXER_HASHED_PASSWORD" ] && [ -n "$WAZUH_KIBANA_HASHED_PASSWORD" ]; then
     # Generate the complete internal_users.yml file
     cat > data/wazuh/wazuh_indexer/internal_users.yml << EOF
 ---
@@ -152,7 +163,7 @@ admin:
   description: "Demo admin user"
 
 kibanaserver:
-  hash: "\$2a\$12\$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H."
+  hash: "$WAZUH_KIBANA_HASHED_PASSWORD"
   reserved: true
   description: "Demo kibanaserver user"
 
@@ -190,9 +201,37 @@ snapshotrestore:
   description: "Demo snapshotrestore user"
 EOF
 
-    echo "✓ Wazuh indexer internal_users.yml generated with hashed admin password"
+    echo "✓ Wazuh indexer internal_users.yml generated with hashed admin and kibanaserver passwords"
 else
-    echo "⚠ Could not find WAZUH_INDEXER_HASHED_PASSWORD in .env file"
+    echo "⚠ Could not find WAZUH_INDEXER_HASHED_PASSWORD or WAZUH_KIBANA_HASHED_PASSWORD in .env file"
+fi
+
+# Start the monitoring stack
+echo "Starting monitoring stack with Docker Compose..."
+if command -v docker-compose >/dev/null 2>&1; then
+    docker-compose up -d
+    echo "✓ Monitoring stack started"
+
+    # Wait a moment for services to initialize
+    echo "Waiting for services to initialize..."
+    sleep 120
+
+    # Configure Wazuh indexer security
+    echo "Configuring Wazuh indexer security..."
+    docker exec -i monitoring-wazuh.indexer-1 bash -c 'INSTALLATION_DIR=/usr/share/wazuh-indexer; CACERT=$INSTALLATION_DIR/certs/root-ca.pem; KEY=$INSTALLATION_DIR/certs/admin-key.pem; CERT=$INSTALLATION_DIR/certs/admin.pem; JAVA_HOME=/usr/share/wazuh-indexer/jdk bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/opensearch-security/ -nhnv -cacert $CACERT -cert $CERT -key $KEY -p 9200 -icl'
+
+
+    if [ $? -eq 0 ]; then
+        echo "✓ Wazuh indexer security configuration applied"
+    else
+        echo "⚠ Failed to apply Wazuh indexer security configuration"
+        echo "  You may need to run this manually after services are fully started:"
+        echo "  docker exec -it monitoring-wazuh.indexer-1 bash -c 'INSTALLATION_DIR=/usr/share/wazuh-indexer; CACERT=\$INSTALLATION_DIR/certs/root-ca.pem; KEY=\$INSTALLATION_DIR/certs/admin-key.pem; CERT=\$INSTALLATION_DIR/certs/admin.pem; JAVA_HOME=/usr/share/wazuh-indexer/jdk bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/opensearch-security/ -nhnv -cacert \$CACERT -cert \$CERT -key \$KEY -p 9200 -icl'"
+    fi
+else
+    echo "⚠ docker-compose not available - you'll need to start the stack manually:"
+    echo "  docker-compose up -d"
+    echo "  Then run the security configuration command manually"
 fi
 
 echo ""

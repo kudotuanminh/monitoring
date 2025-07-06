@@ -22,54 +22,67 @@ This monitoring stack provides:
 
 ## Quick Start
 
-1.  **Make the initialization script executable:**
+1. **Make the initialization script executable:**
+   ```bash
+   chmod +x init.sh
+   ```
 
-    ```bash
-    chmod +x init.sh
-    ```
+2. **Generate hashed passwords for Wazuh authentication:**
+   Before running the initialization script, you'll need to generate bcrypt hashes for both the Wazuh indexer admin and kibanaserver users:
 
-2.  **Generate hashed passwords for Wazuh Indexer authentication:**
-    You can use the provided Docker command to generate a bcrypt hash for your Wazuh indexer password:
+   ```bash
+   # Generate hash for Wazuh indexer admin password
+   docker run --rm -it wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh
 
-    ```bash
-    docker run --rm -it wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh
-    ```
+   # Generate hash for Wazuh kibanaserver password
+   docker run --rm -it wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh
+   ```
 
-    This will prompt you to enter your password and return a bcrypt hash that you can use for the initialization script.
+   **Warning**: Don't use the `$` or `&` characters in your passwords. These characters can cause errors during deployment.
 
-    ### Example Hash Generation
+3. **Run the initialization script:**
+   ```bash
+   ./init.sh
+   ```
 
-        ```bash
-        $ docker run --rm -it wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh
-        Please enter the password:
-        $2y$12$K/SpwjtB.wOHJ/Nc6GVRDuc1h0rM1DfvziFRNPtk27P.c4yDr9njO
-        ```
+   The script will prompt you for:
+   - OpenSearch admin password
+   - Grafana endpoint, username, and password
+   - Wazuh indexer password (plain text) and hashed password (bcrypt hash)
+   - Wazuh kibanaserver password (plain text) and hashed password (bcrypt hash)
+   - Wazuh API username and password
 
-3.  **Initialize the monitoring stack:**
+4. **Automatic startup:**
+   The initialization script will automatically:
+   - Create all configuration files
+   - Set up proper permissions and ownership
+   - Generate SSL certificates for Wazuh
+   - Start all services with `docker-compose up -d`
+   - Configure Wazuh indexer security settings
 
-    ```bash
-    ./init.sh
-    ```
+5. **Access the services:**
+   - Grafana: http://localhost:3000
+   - OpenSearch Dashboards: http://localhost:5601
+   - Wazuh Dashboard: http://localhost:443
+   - VictoriaMetrics: http://localhost:8428
 
-    The script will prompt you for:
+## Manual Startup (Alternative)
 
-    - OpenSearch admin password
-    - Grafana endpoint, username, and password
-    - Wazuh indexer password (plain text)
-    - Wazuh indexer hashed password (bcrypt hash)
-    - Wazuh API username and password
+If you prefer to start services manually or if the automatic startup fails:
 
-4.  **Start the services:**
+1. **Run initialization without startup:**
+   The init.sh script will handle startup automatically, but if you need to start manually:
 
-    ```bash
-    docker-compose up -d
-    ```
+2. **Start services:**
+   ```bash
+   docker-compose up -d
+   ```
 
-5.  **Access the services:**
-    - Grafana: http://localhost:3000
-    - OpenSearch Dashboards: http://localhost:5601
-    - Wazuh Dashboard: http://localhost:5602
-    - VictoriaMetrics: http://localhost:8428
+3. **Apply Wazuh security configuration:**
+   ```bash
+   # Wait for services to initialize (2-5 minutes), then run:
+   docker exec -it monitoring-wazuh.indexer-1 bash -c 'INSTALLATION_DIR=/usr/share/wazuh-indexer; CACERT=$INSTALLATION_DIR/certs/root-ca.pem; KEY=$INSTALLATION_DIR/certs/admin-key.pem; CERT=$INSTALLATION_DIR/certs/admin.pem; JAVA_HOME=/usr/share/wazuh-indexer/jdk bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/opensearch-security/ -nhnv -cacert $CACERT -cert $CERT -key $KEY -p 9200 -icl'
+   ```
 
 ## Generating Hashed Passwords
 
@@ -119,14 +132,16 @@ monitoring/
 
 The `.env` file contains sensitive configuration:
 
--   `OPENSEARCH_ADMIN_PASSWORD` - OpenSearch admin password
--   `GF_ENDPOINT` - Grafana endpoint
--   `GF_ADMIN_USER` - Grafana admin username
--   `GF_ADMIN_PASSWORD` - Grafana admin password
--   `WAZUH_INDEXER_PASSWORD` - Wazuh indexer plain password
--   `WAZUH_INDEXER_HASHED_PASSWORD` - Wazuh indexer bcrypt hash
--   `WAZUH_API_USERNAME` - Wazuh API username
--   `WAZUH_API_PASSWORD` - Wazuh API password
+- `OPENSEARCH_ADMIN_PASSWORD` - OpenSearch admin password
+- `GF_ENDPOINT` - Grafana endpoint
+- `GF_ADMIN_USER` - Grafana admin username
+- `GF_ADMIN_PASSWORD` - Grafana admin password
+- `WAZUH_INDEXER_PASSWORD` - Wazuh indexer plain password
+- `WAZUH_INDEXER_HASHED_PASSWORD` - Wazuh indexer bcrypt hash
+- `WAZUH_KIBANA_PASSWORD` - Wazuh kibanaserver plain password
+- `WAZUH_KIBANA_HASHED_PASSWORD` - Wazuh kibanaserver bcrypt hash
+- `WAZUH_API_USERNAME` - Wazuh API username
+- `WAZUH_API_PASSWORD` - Wazuh API password
 
 ## Services and Ports
 
@@ -144,13 +159,18 @@ The `.env` file contains sensitive configuration:
 
 The `init.sh` script performs the following actions:
 
-1. **Prompts for configuration** - Collects all necessary passwords and settings
-2. **Creates .env file** - Stores configuration securely
-3. **Creates data directories** - Sets up persistent storage
-4. **Sets ownership and permissions** - Configures proper file permissions
-5. **Configures system parameters** - Sets `vm.max_map_count` for OpenSearch
-6. **Generates SSL certificates** - Creates Wazuh indexer certificates
-7. **Creates internal users** - Sets up Wazuh indexer authentication
+1. **Prompts for configuration** - Collects all necessary passwords and settings including:
+   - Plain text and hashed passwords for Wazuh indexer admin user
+   - Plain text and hashed passwords for Wazuh kibanaserver user
+   - API credentials and other service configurations
+2. **Creates .env file** - Stores all configuration securely
+3. **Generates configuration files** - Creates wazuh.yml with API credentials
+4. **Sets ownership and permissions** - Configures proper file permissions for all services
+5. **Configures system parameters** - Sets `vm.max_map_count` for OpenSearch compatibility
+6. **Generates SSL certificates** - Creates Wazuh indexer certificates using Docker
+7. **Creates internal users** - Generates internal_users.yml with hashed passwords for admin and kibanaserver
+8. **Starts services** - Automatically runs `docker-compose up -d`
+9. **Applies security configuration** - Runs Wazuh indexer security admin tool to apply user configurations
 
 ## Troubleshooting
 
