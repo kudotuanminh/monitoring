@@ -8,6 +8,7 @@ echo "=================================="
 RUN_MONITORING=false
 RUN_AGENT=false
 SKIP_WAZUH_SECURITY=false
+SKIP_CONFIRMATION=false
 
 show_help() {
     echo "Usage: $0 [OPTIONS]"
@@ -17,6 +18,7 @@ show_help() {
     echo "  -a, --agent                  Initialize and run agent stack only"
     echo "  -b, --both                   Initialize and run both monitoring and agent stacks"
     echo "  -s, --skip-wazuh-security    Skip Wazuh indexer security configuration (monitoring stack)"
+    echo "  -y, --yes                    Skip confirmation prompts (for automation)"
     echo "  -h, --help                   Show this help message"
     echo ""
     echo "Examples:"
@@ -24,7 +26,8 @@ show_help() {
     echo "  $0 -a                        # Run agent stack only"
     echo "  $0 -b                        # Run both stacks"
     echo "  $0 -m -s                     # Run monitoring stack, skip security config"
-    echo "  $0 --both --skip-wazuh-security  # Run both, skip security config"
+    echo "  $0 -b -y                     # Run both stacks without confirmation"
+    echo "  $0 --both --skip-wazuh-security --yes  # Run both, skip security config and confirmation"
     echo ""
     echo "Stack Information:"
     echo "  Monitoring Stack: Wazuh Manager, OpenSearch, Grafana, Logstash"
@@ -49,6 +52,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -s|--skip-wazuh-security)
             SKIP_WAZUH_SECURITY=true
+            shift
+            ;;
+        -y|--yes)
+            SKIP_CONFIRMATION=true
             shift
             ;;
         -h|--help)
@@ -176,11 +183,15 @@ echo "🔍 Debug Info:"
 echo "  SKIP_WAZUH_SECURITY = $SKIP_WAZUH_SECURITY"
 echo ""
 
-# Confirm before proceeding
-read -p "Do you want to continue with this initialization? (y/N): " confirm
-if [[ ! $confirm =~ ^[Yy]$ ]]; then
-    echo "❌ Initialization cancelled."
-    exit 0
+# Confirm before proceeding (unless skipped)
+if [ "$SKIP_CONFIRMATION" = false ]; then
+    read -p "Do you want to continue with this initialization? (y/N): " confirm
+    if [[ ! $confirm =~ ^[Yy]$ ]]; then
+        echo "❌ Initialization cancelled."
+        exit 0
+    fi
+else
+    echo "⚡ Skipping confirmation (--yes flag used)"
 fi
 
 # Track overall success

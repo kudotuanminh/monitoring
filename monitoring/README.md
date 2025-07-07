@@ -89,29 +89,6 @@ If you prefer to start services manually or if the automatic startup fails:
    docker exec -it monitoring-wazuh.indexer-1 bash -c 'INSTALLATION_DIR=/usr/share/wazuh-indexer; CACERT=$INSTALLATION_DIR/certs/root-ca.pem; KEY=$INSTALLATION_DIR/certs/admin-key.pem; CERT=$INSTALLATION_DIR/certs/admin.pem; JAVA_HOME=/usr/share/wazuh-indexer/jdk bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/opensearch-security/ -nhnv -cacert $CACERT -cert $CERT -key $KEY -p 9200 -icl'
    ```
 
-## Generating Hashed Passwords
-
-### For Wazuh Indexer Authentication
-
-The Wazuh indexer requires bcrypt hashed passwords for authentication. You can generate these using Docker:
-
-#### Method 1: Using Wazuh Indexer Container
-
-```bash
-docker run --rm -it wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh
-```
-
-This will prompt you to enter your password and return a bcrypt hash that you can use during initialization.
-
-### Example Hash Generation
-
-```bash
-# Example using Docker method
-$ docker run --rm -it wazuh/wazuh-indexer:4.12.0 bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh
-Please enter the password:
-$2y$12$K/SpwjtB.wOHJ/Nc6GVRDuc1h0rM1DfvziFRNPtk27P.c4yDr9njO
-```
-
 ## Configuration Files
 
 ### Directory Structure
@@ -158,73 +135,3 @@ The `.env` file contains sensitive configuration:
 | Wazuh Manager         | 1514, 1515, 514/udp, 55000 | 1514, 1515, 514/udp, 55000 | Agent communication and API |
 | Wazuh Indexer         | 9201                       | 9201                       | Internal indexing           |
 | Wazuh Dashboard       | 5602                       | 5602                       | Web interface               |
-
-## Initialization Process
-
-The `init.sh` script performs the following actions:
-
-1. **Prompts for configuration** - Collects all necessary passwords and settings including:
-   - Plain text and hashed passwords for Wazuh indexer admin user
-   - Plain text and hashed passwords for Wazuh kibanaserver user
-   - API credentials and other service configurations
-2. **Creates .env file** - Stores all configuration securely
-3. **Generates configuration files** - Creates wazuh.yml with API credentials
-4. **Sets ownership and permissions** - Configures proper file permissions for all services
-5. **Configures system parameters** - Sets `vm.max_map_count` for OpenSearch compatibility
-6. **Generates SSL certificates** - Creates Wazuh indexer certificates using Docker
-7. **Creates internal users** - Generates internal_users.yml with hashed passwords for admin and kibanaserver
-8. **Starts services** - Automatically runs `docker-compose up -d`
-9. **Applies security configuration** - Runs Wazuh indexer security admin tool to apply user configurations
-
-## Troubleshooting
-
-### Common Issues
-
-1. **vm.max_map_count too low**
-
-    ```bash
-    sudo sysctl -w vm.max_map_count=262144
-    ```
-
-2. **Permission denied errors**
-
-    - Ensure you run `init.sh` with appropriate privileges
-    - Check that data directories have correct ownership
-
-3. **Certificate issues**
-
-    - Verify that `config/wazuh/certs.yml` exists
-    - Ensure Docker is running for certificate generation
-
-4. **Password authentication fails**
-    - Verify that hashed passwords are properly formatted bcrypt hashes
-    - Check that passwords in `.env` are properly quoted
-
-### Logs
-
-View service logs:
-
-```bash
-# All services
-docker-compose logs
-
-# Specific service
-docker-compose logs grafana
-docker-compose logs wazuh.manager
-docker-compose logs opensearch
-```
-
-## Security Considerations
-
--   All passwords are stored in `.env` file - keep it secure
--   SSL certificates are generated automatically for Wazuh components
--   Change default passwords immediately after setup
--   Consider using Docker secrets for production deployments
-
-## Backup
-
-Important directories to backup:
-
--   `data/` - Some persistent data
--   `config/` - Configuration files
--   `.env` - Environment variables
