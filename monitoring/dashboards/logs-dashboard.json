@@ -21,7 +21,7 @@
       "type": "datasource",
       "id": "grafana-opensearch-datasource",
       "name": "OpenSearch",
-      "version": "2.26.1"
+      "version": "2.27.0"
     },
     {
       "type": "panel",
@@ -163,7 +163,7 @@
               "type": "count"
             }
           ],
-          "query": "*",
+          "query": "* AND level:$log_level AND message:$search*",
           "queryType": "lucene",
           "refId": "A",
           "timeField": "@timestamp"
@@ -220,7 +220,7 @@
               "type": "logs"
             }
           ],
-          "query": "* AND log_level:$log_level AND log_message:$search*",
+          "query": "* AND level:$log_level AND message:$search*",
           "queryType": "lucene",
           "refId": "A",
           "timeField": "@timestamp"
@@ -268,13 +268,13 @@
           "type": "grafana-opensearch-datasource",
           "uid": "${DS_OPENSEARCH}"
         },
-        "definition": "{\"find\": \"terms\", \"field\": \"log_level.keyword\", \"size\": 1000}",
+        "definition": "{\"find\": \"terms\", \"field\": \"level.keyword\", \"size\": 1000}",
         "includeAll": true,
         "label": "Log Level",
         "multi": true,
         "name": "log_level",
         "options": [],
-        "query": "{\"find\": \"terms\", \"field\": \"log_level.keyword\", \"size\": 1000}",
+        "query": "{\"find\": \"terms\", \"field\": \"level.keyword\", \"size\": 1000}",
         "refresh": 1,
         "regex": "",
         "type": "query"
@@ -306,6 +306,6 @@
   "timezone": "browser",
   "title": "Logs",
   "uid": "aeocr8tz05af4e",
-  "version": 22,
+  "version": 3,
   "weekStart": ""
 }

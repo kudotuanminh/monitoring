@@ -1,7 +1,7 @@
 services:
   telegraf:
     container_name: 'telegraf'
-    image: 'telegraf:1.30'
+    image: 'telegraf:1.35'
     restart: unless-stopped
     user: telegraf:${DOCKER_GID:-998}
     volumes:
@@ -17,4 +17,16 @@ services:
       - .env
     network_mode: host
 
-#  fluent-bit:
+  fluent-bit:
+    container_name: 'fluent-bit'
+    image: 'fluent/fluent-bit:4.0.3'
+    restart: unless-stopped
+    volumes:
+      - ./config/fluent-bit:/fluent-bit/etc:ro
+
+      - ./data/fluent-bit:/fluent-bit/wal
+      - /var/log:/var/log:ro
+      - /var/ossec/logs:/var/ossec/logs:ro
+    env_file:
+      - .env
+    network_mode: host
