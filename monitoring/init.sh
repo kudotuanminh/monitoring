@@ -6,10 +6,14 @@ echo "Initializing monitoring stack..."
 # Parse command line arguments
 SKIP_WAZUH_SECURITY=false
 
+echo "🔍 Debug: Received arguments: $@"
+
 while [[ $# -gt 0 ]]; do
+    echo "🔍 Debug: Processing argument: $1"
     case $1 in
         -s|--skip-wazuh-security)
             SKIP_WAZUH_SECURITY=true
+            echo "🔍 Debug: Set SKIP_WAZUH_SECURITY=true"
             shift
             ;;
         -h|--help)
@@ -28,6 +32,8 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
+
+echo "🔍 Debug: Final SKIP_WAZUH_SECURITY = $SKIP_WAZUH_SECURITY"
 
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then

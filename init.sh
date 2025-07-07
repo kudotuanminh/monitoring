@@ -109,9 +109,11 @@ run_monitoring_stack() {
 
     # Run with appropriate arguments
     if [ "$SKIP_WAZUH_SECURITY" = true ]; then
+        echo "🔍 Debug: SKIP_WAZUH_SECURITY is true, passing -s flag"
         echo "Running monitoring stack initialization (skipping Wazuh security)..."
         ./init.sh -s
     else
+        echo "🔍 Debug: SKIP_WAZUH_SECURITY is false, running without -s flag"
         echo "Running monitoring stack initialization..."
         ./init.sh
     fi
@@ -167,6 +169,11 @@ fi
 if [ "$RUN_AGENT" = true ]; then
     echo "  ✓ Agent Stack (Wazuh Agent, Fluent Bit)"
 fi
+echo ""
+
+# Debug output
+echo "🔍 Debug Info:"
+echo "  SKIP_WAZUH_SECURITY = $SKIP_WAZUH_SECURITY"
 echo ""
 
 # Confirm before proceeding
