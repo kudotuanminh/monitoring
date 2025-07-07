@@ -248,16 +248,16 @@ if command -v docker-compose >/dev/null 2>&1; then
     docker-compose up -d
     echo "✓ Monitoring stack started"
 
-    # Wait a moment for services to initialize
-    echo "Waiting for services to initialize..."
-    sleep 120
-
     # Configure Wazuh indexer security (unless skipped)
     if [ "$SKIP_WAZUH_SECURITY" = true ]; then
         echo "⚠ Skipping Wazuh indexer security configuration (--skip-wazuh-security flag was used)"
         echo "  You can configure security manually later by running:"
         echo "  docker exec -it monitoring-wazuh.indexer-1 bash -c 'INSTALLATION_DIR=/usr/share/wazuh-indexer; CACERT=\$INSTALLATION_DIR/certs/root-ca.pem; KEY=\$INSTALLATION_DIR/certs/admin-key.pem; CERT=\$INSTALLATION_DIR/certs/admin.pem; JAVA_HOME=/usr/share/wazuh-indexer/jdk bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/opensearch-security/ -nhnv -cacert \$CACERT -cert \$CERT -key \$KEY -p 9200 -icl'"
     else
+        # Wait a moment for services to initialize
+        echo "Waiting for services to initialize..."
+        sleep 120
+
         echo "Configuring Wazuh indexer security..."
         docker exec -i monitoring-wazuh.indexer-1 bash -c 'INSTALLATION_DIR=/usr/share/wazuh-indexer; CACERT=$INSTALLATION_DIR/certs/root-ca.pem; KEY=$INSTALLATION_DIR/certs/admin-key.pem; CERT=$INSTALLATION_DIR/certs/admin.pem; JAVA_HOME=/usr/share/wazuh-indexer/jdk bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh -cd /usr/share/wazuh-indexer/opensearch-security/ -nhnv -cacert $CACERT -cert $CERT -key $KEY -p 9200 -icl'
 
