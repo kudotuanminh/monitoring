@@ -1,7 +1,7 @@
 services:
   telegraf:
     container_name: 'telegraf'
-    image: 'telegraf:1.35'
+    image: 'telegraf:1.30'
     restart: unless-stopped
     user: telegraf:${DOCKER_GID:-998}
     volumes:
